@@ -1,14 +1,14 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
-    <title>Emilio&#39;s Murmurs</title>
-    <link>https://em1l1o.github.io/</link>
-    <description>Recent content on Emilio&#39;s Murmurs</description>
+    <title>process on Emilio&#39;s Murmurs</title>
+    <link>https://em1l1o.github.io/tags/process/</link>
+    <description>Recent content in process on Emilio&#39;s Murmurs</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
     <lastBuildDate>Tue, 15 Sep 2020 00:09:21 +0800</lastBuildDate>
     
-	<atom:link href="https://em1l1o.github.io/index.xml" rel="self" type="application/rss+xml" />
+	<atom:link href="https://em1l1o.github.io/tags/process/index.xml" rel="self" type="application/rss+xml" />
     
     
     <item>
@@ -34,28 +34,6 @@ Futex是一种用户态和内核态混合的同步机制。首先，同步的进
 这里就奇怪了，因为执行的定时任务并没有涉及到线程相关操作，且通过 crontab 写入的定时任务运行一切正常，卡住的全是 rails 里 schedule 写入的定时任务。于是搜索范围可以缩小到 rails 上了。
 rails 的定时任务是由 gem whenever 写入 cron 来实现的，就可以执行定时任务这一点来说，whenever 是可以被排除嫌疑的。那么就需要看看定时任务具体执行的命令了。
 查看所有 schedule 中执行的具体命令</description>
-    </item>
-    
-    <item>
-      <title>处理 AWS 分离 IAM Role 失败</title>
-      <link>https://em1l1o.github.io/posts/fix_iam_role_detachment_issue/</link>
-      <pubDate>Mon, 14 Sep 2020 22:46:04 +0800</pubDate>
-      
-      <guid>https://em1l1o.github.io/posts/fix_iam_role_detachment_issue/</guid>
-      <description>背景 发现 sentry 实例已经有几天的实例监控数据缺失。登录实例进行检查，手动触发监控脚本，监控数据发送失败，请求响应显示：
-The security token included in the request is expired
-由于调用 AWS 的服务、资源等都是需要对应权限（security credential）的，管理权限的方式之一便是绑定 IAM 角色来代替我们进行管理（我们现在的方式）。
-实例中 security credential 都是临时的凭证，有效时间很短。与实例绑定的 IAM 角色会在凭证过期之前（至少在过期前 5 分钟）自动刷新凭证。
-所以出现这样的响应可能是 IAM 角色出现了问题。
-定位问题 在实例中使用如下方式来查看实例的 security credential
-curl http://169.254.169.254/latest/meta-data/iam/security-credentials/EC2-individual-role 果然，在返回的响应中，Expiration 已经是在几天前，并且 LastUpdated 同样也是在几天前。
-IAM 角色出问题了。
-接下来先尝试了在 AWS Console 分离实例的 IAM 角色
-确认分离后，AWS 显示分离成功。
-接下来给实例绑定新建的 IAM 角色，绑定失败。响应如下：
-The association &amp;lt;AssociationId&amp;gt; is not the active association.
-使用 AWS CLI 查看当前所有实例的 IAM 文件配置关联
-aws ec2 describe-iam-instance-profile-associations 发现与问题实例绑定的 AssociationId 的 State 一直处于 disassociating 状态。</description>
     </item>
     
   </channel>

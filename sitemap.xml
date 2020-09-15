@@ -3,26 +3,78 @@
   xmlns:xhtml="http://www.w3.org/1999/xhtml">
   
   <url>
-    <loc>https://em1l1o.github.io/</loc>
-    <lastmod>2020-09-05T12:01:03+08:00</lastmod>
+    <loc>https://em1l1o.github.io/categories/</loc>
+    <lastmod>2020-09-15T00:09:21+08:00</lastmod>
   </url>
   
   <url>
-    <loc>https://em1l1o.github.io/posts/first_post/</loc>
-    <lastmod>2020-09-05T12:01:03+08:00</lastmod>
+    <loc>https://em1l1o.github.io/</loc>
+    <lastmod>2020-09-15T00:09:21+08:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://em1l1o.github.io/tags/futex/</loc>
+    <lastmod>2020-09-15T00:09:21+08:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://em1l1o.github.io/tags/gdb/</loc>
+    <lastmod>2020-09-15T00:09:21+08:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://em1l1o.github.io/tags/newrelic_rpm/</loc>
+    <lastmod>2020-09-15T00:09:21+08:00</lastmod>
   </url>
   
   <url>
     <loc>https://em1l1o.github.io/posts/</loc>
-    <lastmod>2020-09-05T12:01:03+08:00</lastmod>
+    <lastmod>2020-09-15T00:09:21+08:00</lastmod>
   </url>
   
   <url>
-    <loc>https://em1l1o.github.io/categories/</loc>
+    <loc>https://em1l1o.github.io/tags/process/</loc>
+    <lastmod>2020-09-15T00:09:21+08:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://em1l1o.github.io/tags/ruby/</loc>
+    <lastmod>2020-09-15T00:09:21+08:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://em1l1o.github.io/tags/strace/</loc>
+    <lastmod>2020-09-15T00:09:21+08:00</lastmod>
   </url>
   
   <url>
     <loc>https://em1l1o.github.io/tags/</loc>
+    <lastmod>2020-09-15T00:09:21+08:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://em1l1o.github.io/categories/tech/</loc>
+    <lastmod>2020-09-15T00:09:21+08:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://em1l1o.github.io/posts/trace_down_a_memory_leak_issue/</loc>
+    <lastmod>2020-09-15T00:09:21+08:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://em1l1o.github.io/tags/aws/</loc>
+    <lastmod>2020-09-14T22:46:04+08:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://em1l1o.github.io/tags/iam/</loc>
+    <lastmod>2020-09-14T22:46:04+08:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://em1l1o.github.io/posts/fix_iam_role_detachment_issue/</loc>
+    <lastmod>2020-09-14T22:46:04+08:00</lastmod>
   </url>
   
 </urlset>

@@ -6,9 +6,82 @@
     <description>Recent content in Tags on Emilio&#39;s Murmurs</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
+    <lastBuildDate>Tue, 15 Sep 2020 00:09:21 +0800</lastBuildDate>
     
 	<atom:link href="https://em1l1o.github.io/tags/index.xml" rel="self" type="application/rss+xml" />
     
+    
+    <item>
+      <title>futex</title>
+      <link>https://em1l1o.github.io/tags/futex/</link>
+      <pubDate>Tue, 15 Sep 2020 00:09:21 +0800</pubDate>
+      
+      <guid>https://em1l1o.github.io/tags/futex/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>gdb</title>
+      <link>https://em1l1o.github.io/tags/gdb/</link>
+      <pubDate>Tue, 15 Sep 2020 00:09:21 +0800</pubDate>
+      
+      <guid>https://em1l1o.github.io/tags/gdb/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>newrelic_rpm</title>
+      <link>https://em1l1o.github.io/tags/newrelic_rpm/</link>
+      <pubDate>Tue, 15 Sep 2020 00:09:21 +0800</pubDate>
+      
+      <guid>https://em1l1o.github.io/tags/newrelic_rpm/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>process</title>
+      <link>https://em1l1o.github.io/tags/process/</link>
+      <pubDate>Tue, 15 Sep 2020 00:09:21 +0800</pubDate>
+      
+      <guid>https://em1l1o.github.io/tags/process/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>ruby</title>
+      <link>https://em1l1o.github.io/tags/ruby/</link>
+      <pubDate>Tue, 15 Sep 2020 00:09:21 +0800</pubDate>
+      
+      <guid>https://em1l1o.github.io/tags/ruby/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>strace</title>
+      <link>https://em1l1o.github.io/tags/strace/</link>
+      <pubDate>Tue, 15 Sep 2020 00:09:21 +0800</pubDate>
+      
+      <guid>https://em1l1o.github.io/tags/strace/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>AWS</title>
+      <link>https://em1l1o.github.io/tags/aws/</link>
+      <pubDate>Mon, 14 Sep 2020 22:46:04 +0800</pubDate>
+      
+      <guid>https://em1l1o.github.io/tags/aws/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>IAM</title>
+      <link>https://em1l1o.github.io/tags/iam/</link>
+      <pubDate>Mon, 14 Sep 2020 22:46:04 +0800</pubDate>
+      
+      <guid>https://em1l1o.github.io/tags/iam/</guid>
+      <description></description>
+    </item>
     
   </channel>
 </rss>
