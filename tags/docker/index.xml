@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Docker on Emilio&#39;s Murmurs</title>
+    <link>https://em1l1o.github.io/tags/docker/</link>
+    <description>Recent content in Docker on Emilio&#39;s Murmurs</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language>
+    <lastBuildDate>Tue, 29 Sep 2020 10:29:10 +0800</lastBuildDate>
+    
+	<atom:link href="https://em1l1o.github.io/tags/docker/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+    <item>
+      <title>在 Jenkins 上使用 Docker 运行 RSpec</title>
+      <link>https://em1l1o.github.io/posts/build_a_ci_pipeline_with_jenkins_and_docker/</link>
+      <pubDate>Tue, 29 Sep 2020 10:29:10 +0800</pubDate>
+      
+      <guid>https://em1l1o.github.io/posts/build_a_ci_pipeline_with_jenkins_and_docker/</guid>
+      <description>背景 由于公司当前没有搭建 CI，每次完成需求或者修复了 Bug 都需要手动在本地通过了 RSpec 测试才 Push 到远程仓库。但是自己以前习惯提交 PR 后交给 CI 去跑测试，所以经常忘记手动在本地跑测试就 Push 了。长期这样下去出问题只是时间问题，所以在 AWS 启动了一台实例搭建 CI，在创建 PR 的时候触发构建，合并代码进行 RSpec 测试。
+CI 选型 之前接触过的 CI 工具有 CircleCI 以及 Jenkins，但是 CircleCI 要收费（很真实）。所以就选择了开源又强大的 Jenkins。
+搭建 Jenkins 略，Google 一大把。
+初始构建方案 初始的构建方案非常 straightforward，直接在 Jenkins 的实例上把项目所需要的所有依赖（rbenv、Ruby、各种 Gem、PostgreSQL、Redis、FFmpeg 等等等等）都装好，然后再运行 RSpec 测试。虽然这样正常运行了一段时间，但总还是不优雅的。因为这台实例不可能只是为了跑 RSpec 而存在，而且以后什么依赖环境都直接安装在实例上的话，也容易出问题。所以隔离环境进行测试是比较理想的方式，因此 Docker 当然是最佳选择。
+构建方案 构建方案是构建一个项目能够运行的 Base 镜像，其中包含项目所需的所有依赖。每次运行 CI 时，在这个 Base 镜像的基础上去构建新一个新的包含分支代码的 Build 镜像，然后运行该镜像进行测试。测试完毕后将该镜像删除。这就是一个完整的构建周期。
+配置 Docker 构建 Base 镜像 既然是 Ruby 的环境，当然是使用官方的 Ruby 镜像作为基础镜像，能省去不少麻烦（例如安装 rbenv 等）。</description>
+    </item>
+    
+  </channel>
+</rss>

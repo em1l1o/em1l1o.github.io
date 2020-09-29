@@ -6,13 +6,67 @@
     <description>Recent content in Tags on Emilio&#39;s Murmurs</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Tue, 15 Sep 2020 00:09:21 +0800</lastBuildDate>
+    <lastBuildDate>Tue, 29 Sep 2020 10:29:10 +0800</lastBuildDate>
     
 	<atom:link href="https://em1l1o.github.io/tags/index.xml" rel="self" type="application/rss+xml" />
     
     
     <item>
-      <title>futex</title>
+      <title>CI</title>
+      <link>https://em1l1o.github.io/tags/ci/</link>
+      <pubDate>Tue, 29 Sep 2020 10:29:10 +0800</pubDate>
+      
+      <guid>https://em1l1o.github.io/tags/ci/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>Coding</title>
+      <link>https://em1l1o.github.io/tags/coding/</link>
+      <pubDate>Tue, 29 Sep 2020 10:29:10 +0800</pubDate>
+      
+      <guid>https://em1l1o.github.io/tags/coding/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>Docker</title>
+      <link>https://em1l1o.github.io/tags/docker/</link>
+      <pubDate>Tue, 29 Sep 2020 10:29:10 +0800</pubDate>
+      
+      <guid>https://em1l1o.github.io/tags/docker/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>Jenkins</title>
+      <link>https://em1l1o.github.io/tags/jenkins/</link>
+      <pubDate>Tue, 29 Sep 2020 10:29:10 +0800</pubDate>
+      
+      <guid>https://em1l1o.github.io/tags/jenkins/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>Pipeline</title>
+      <link>https://em1l1o.github.io/tags/pipeline/</link>
+      <pubDate>Tue, 29 Sep 2020 10:29:10 +0800</pubDate>
+      
+      <guid>https://em1l1o.github.io/tags/pipeline/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>RSpec</title>
+      <link>https://em1l1o.github.io/tags/rspec/</link>
+      <pubDate>Tue, 29 Sep 2020 10:29:10 +0800</pubDate>
+      
+      <guid>https://em1l1o.github.io/tags/rspec/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>Futex</title>
       <link>https://em1l1o.github.io/tags/futex/</link>
       <pubDate>Tue, 15 Sep 2020 00:09:21 +0800</pubDate>
       
@@ -21,7 +75,7 @@
     </item>
     
     <item>
-      <title>gdb</title>
+      <title>GDB</title>
       <link>https://em1l1o.github.io/tags/gdb/</link>
       <pubDate>Tue, 15 Sep 2020 00:09:21 +0800</pubDate>
       
@@ -39,7 +93,7 @@
     </item>
     
     <item>
-      <title>process</title>
+      <title>Process</title>
       <link>https://em1l1o.github.io/tags/process/</link>
       <pubDate>Tue, 15 Sep 2020 00:09:21 +0800</pubDate>
       
@@ -48,7 +102,7 @@
     </item>
     
     <item>
-      <title>ruby</title>
+      <title>Ruby</title>
       <link>https://em1l1o.github.io/tags/ruby/</link>
       <pubDate>Tue, 15 Sep 2020 00:09:21 +0800</pubDate>
       
@@ -57,7 +111,7 @@
     </item>
     
     <item>
-      <title>strace</title>
+      <title>Strace</title>
       <link>https://em1l1o.github.io/tags/strace/</link>
       <pubDate>Tue, 15 Sep 2020 00:09:21 +0800</pubDate>
       

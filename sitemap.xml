@@ -4,12 +4,62 @@
   
   <url>
     <loc>https://em1l1o.github.io/categories/</loc>
-    <lastmod>2020-09-15T00:09:21+08:00</lastmod>
+    <lastmod>2020-09-29T10:29:10+08:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://em1l1o.github.io/tags/ci/</loc>
+    <lastmod>2020-09-29T10:29:10+08:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://em1l1o.github.io/tags/coding/</loc>
+    <lastmod>2020-09-29T10:29:10+08:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://em1l1o.github.io/tags/docker/</loc>
+    <lastmod>2020-09-29T10:29:10+08:00</lastmod>
   </url>
   
   <url>
     <loc>https://em1l1o.github.io/</loc>
-    <lastmod>2020-09-15T00:09:21+08:00</lastmod>
+    <lastmod>2020-09-29T10:29:10+08:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://em1l1o.github.io/tags/jenkins/</loc>
+    <lastmod>2020-09-29T10:29:10+08:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://em1l1o.github.io/tags/pipeline/</loc>
+    <lastmod>2020-09-29T10:29:10+08:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://em1l1o.github.io/posts/</loc>
+    <lastmod>2020-09-29T10:29:10+08:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://em1l1o.github.io/tags/rspec/</loc>
+    <lastmod>2020-09-29T10:29:10+08:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://em1l1o.github.io/tags/</loc>
+    <lastmod>2020-09-29T10:29:10+08:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://em1l1o.github.io/categories/tech/</loc>
+    <lastmod>2020-09-29T10:29:10+08:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://em1l1o.github.io/posts/build_a_ci_pipeline_with_jenkins_and_docker/</loc>
+    <lastmod>2020-09-29T10:29:10+08:00</lastmod>
   </url>
   
   <url>
@@ -28,11 +78,6 @@
   </url>
   
   <url>
-    <loc>https://em1l1o.github.io/posts/</loc>
-    <lastmod>2020-09-15T00:09:21+08:00</lastmod>
-  </url>
-  
-  <url>
     <loc>https://em1l1o.github.io/tags/process/</loc>
     <lastmod>2020-09-15T00:09:21+08:00</lastmod>
   </url>
@@ -44,16 +89,6 @@
   
   <url>
     <loc>https://em1l1o.github.io/tags/strace/</loc>
-    <lastmod>2020-09-15T00:09:21+08:00</lastmod>
-  </url>
-  
-  <url>
-    <loc>https://em1l1o.github.io/tags/</loc>
-    <lastmod>2020-09-15T00:09:21+08:00</lastmod>
-  </url>
-  
-  <url>
-    <loc>https://em1l1o.github.io/categories/tech/</loc>
     <lastmod>2020-09-15T00:09:21+08:00</lastmod>
   </url>
   

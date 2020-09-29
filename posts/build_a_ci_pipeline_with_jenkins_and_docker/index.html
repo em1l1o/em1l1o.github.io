@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  
+    <title>在 Jenkins 上使用 Docker 运行 RSpec :: Emilio&#39;s Murmurs</title>
+  
+  <meta http-equiv="content-type" content="text/html; charset=utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="背景 由于公司当前没有搭建 CI，每次完成需求或者修复了 Bug 都需要手动在本地通过了 RSpec 测试才 Push 到远程仓库。但是自己以前习惯提交 PR 后交给 CI 去跑测试，所以经常忘记手动在本地跑测试就 Push 了。长期这样下去出问题只是时间问题，所以在 AWS 启动了一台实例搭建 CI，在创建 PR 的时候触发构建，合并代码进行 RSpec 测试。
+CI 选型 之前接触过的 CI 工具有 CircleCI 以及 Jenkins，但是 CircleCI 要收费（很真实）。所以就选择了开源又强大的 Jenkins。
+搭建 Jenkins 略，Google 一大把。
+初始构建方案 初始的构建方案非常 straightforward，直接在 Jenkins 的实例上把项目所需要的所有依赖（rbenv、Ruby、各种 Gem、PostgreSQL、Redis、FFmpeg 等等等等）都装好，然后再运行 RSpec 测试。虽然这样正常运行了一段时间，但总还是不优雅的。因为这台实例不可能只是为了跑 RSpec 而存在，而且以后什么依赖环境都直接安装在实例上的话，也容易出问题。所以隔离环境进行测试是比较理想的方式，因此 Docker 当然是最佳选择。
+构建方案 构建方案是构建一个项目能够运行的 Base 镜像，其中包含项目所需的所有依赖。每次运行 CI 时，在这个 Base 镜像的基础上去构建新一个新的包含分支代码的 Build 镜像，然后运行该镜像进行测试。测试完毕后将该镜像删除。这就是一个完整的构建周期。
+配置 Docker 构建 Base 镜像 既然是 Ruby 的环境，当然是使用官方的 Ruby 镜像作为基础镜像，能省去不少麻烦（例如安装 rbenv 等）。" />
+<meta name="keywords" content="" />
+<meta name="robots" content="noodp" />
+<link rel="canonical" href="https://em1l1o.github.io/posts/build_a_ci_pipeline_with_jenkins_and_docker/" />
+
+
+<script type="application/javascript">
+var doNotTrack = false;
+if (!doNotTrack) {
+	window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+	ga('create', 'UA-178235035-1', 'auto');
+	
+	ga('send', 'pageview');
+}
+</script>
+<script async src='https://www.google-analytics.com/analytics.js'></script>
+
+
+
+<link rel="stylesheet" href="https://em1l1o.github.io/assets/style.css">
+
+  <link rel="stylesheet" href="https://em1l1o.github.io/assets/green.css">
+
+
+
+
+
+
+<link rel="apple-touch-icon-precomposed" sizes="144x144" href="https://em1l1o.github.io/img/apple-touch-icon-144-precomposed.png">
+
+  <link rel="shortcut icon" href="https://em1l1o.github.io/img/favicon/green.png">
+
+
+
+<meta name="twitter:card" content="summary" />
+
+  
+    <meta name="twitter:site" content="" />
+  
+    <meta name="twitter:creator" content="" />
+
+
+
+<meta property="og:locale" content="en" />
+<meta property="og:type" content="article" />
+<meta property="og:title" content="在 Jenkins 上使用 Docker 运行 RSpec :: Emilio&#39;s Murmurs">
+<meta property="og:description" content="在 Jenkins 上使用 Docker 运行 RSpec" />
+<meta property="og:url" content="https://em1l1o.github.io/posts/build_a_ci_pipeline_with_jenkins_and_docker/" />
+<meta property="og:site_name" content="在 Jenkins 上使用 Docker 运行 RSpec" />
+
+  <meta property="og:image" content="https://em1l1o.github.io/">
+
+<meta property="og:image:width" content="2048">
+<meta property="og:image:height" content="1024">
+
+  <meta property="article:section" content="Tech" />
+
+
+  <meta property="article:published_time" content="2020-09-29 10:29:10 &#43;0800 CST" />
+
+
+
+
+
+
+
+
+
+
+
+
+</head>
+<body class="green">
+
+
+<div class="container center headings--one-size">
+
+  <header class="header">
+  <div class="header__inner">
+    <div class="header__logo">
+      <a href="/">
+  <div class="logo">
+    Emilio&#39;s Murmurs
+  </div>
+</a>
+
+    </div>
+    <div class="menu-trigger">menu</div>
+  </div>
+  
+    <nav class="menu">
+  <ul class="menu__inner menu__inner--desktop">
+    
+      
+        
+          <li><a href="/posts">Posts</a></li>
+        
+      
+        
+          <li><a href="/about">About</a></li>
+        
+      
+      
+        <ul class="menu__sub-inner">
+          <li class="menu__sub-inner-more-trigger">Show more ▾</li>
+
+          <ul class="menu__sub-inner-more hidden">
+            
+              
+                <li><a href="/categories">Categories</a></li>
+              
+            
+              
+                <li><a href="/tags">Tags</a></li>
+              
+            
+          </ul>
+        </ul>
+      
+    
+
+    
+  </ul>
+
+  <ul class="menu__inner menu__inner--mobile">
+    
+      
+        <li><a href="/posts">Posts</a></li>
+      
+    
+      
+        <li><a href="/about">About</a></li>
+      
+    
+      
+        <li><a href="/categories">Categories</a></li>
+      
+    
+      
+        <li><a href="/tags">Tags</a></li>
+      
+    
+    
+  </ul>
+</nav>
+
+  
+</header>
+
+
+  <div class="content">
+    
+<div class="post">
+  <h1 class="post-title">
+    <a href="https://em1l1o.github.io/posts/build_a_ci_pipeline_with_jenkins_and_docker/">在 Jenkins 上使用 Docker 运行 RSpec</a></h1>
+  <div class="post-meta">
+    
+      <span class="post-date">
+        2020-09-29 
+      </span>
+    
+    
+  </div>
+
+  
+  <span class="post-tags">
+    
+    #<a href="https://em1l1o.github.io/tags/ci/">CI</a>&nbsp;
+    
+    #<a href="https://em1l1o.github.io/tags/jenkins/">Jenkins</a>&nbsp;
+    
+    #<a href="https://em1l1o.github.io/tags/docker/">Docker</a>&nbsp;
+    
+    #<a href="https://em1l1o.github.io/tags/rspec/">RSpec</a>&nbsp;
+    
+    #<a href="https://em1l1o.github.io/tags/pipeline/">Pipeline</a>&nbsp;
+    
+    #<a href="https://em1l1o.github.io/tags/coding/">Coding</a>&nbsp;
+    
+  </span>
+  
+
+  
+
+  
+
+  <div class="post-content"><div>
+        <h2 id="背景">背景<a href="#背景" class="hanchor" ariaLabel="Anchor">&#8983;</a> </h2>
+<p>由于公司当前没有搭建 CI，每次完成需求或者修复了 Bug 都需要手动在本地通过了 RSpec 测试才 Push 到远程仓库。但是自己以前习惯提交 PR 后交给 CI 去跑测试，所以经常忘记手动在本地跑测试就 Push 了。长期这样下去出问题只是时间问题，所以在 AWS 启动了一台实例搭建 CI，在创建 PR 的时候触发构建，合并代码进行 RSpec 测试。</p>
+<h2 id="ci-选型">CI 选型<a href="#ci-选型" class="hanchor" ariaLabel="Anchor">&#8983;</a> </h2>
+<p>之前接触过的 CI 工具有 CircleCI 以及 Jenkins，但是 CircleCI 要收费（很真实）。所以就选择了开源又强大的 Jenkins。</p>
+<h2 id="搭建-jenkins">搭建 Jenkins<a href="#搭建-jenkins" class="hanchor" ariaLabel="Anchor">&#8983;</a> </h2>
+<p>略，Google 一大把。</p>
+<h2 id="初始构建方案">初始构建方案<a href="#初始构建方案" class="hanchor" ariaLabel="Anchor">&#8983;</a> </h2>
+<p>初始的构建方案非常 straightforward，直接在 Jenkins 的实例上把项目所需要的所有依赖（rbenv、Ruby、各种 Gem、PostgreSQL、Redis、FFmpeg 等等等等）都装好，然后再运行 RSpec 测试。虽然这样正常运行了一段时间，但总还是不优雅的。因为这台实例不可能只是为了跑 RSpec 而存在，而且以后什么依赖环境都直接安装在实例上的话，也容易出问题。所以隔离环境进行测试是比较理想的方式，因此 Docker 当然是最佳选择。</p>
+<h2 id="构建方案">构建方案<a href="#构建方案" class="hanchor" ariaLabel="Anchor">&#8983;</a> </h2>
+<p>构建方案是构建一个项目能够运行的 Base 镜像，其中包含项目所需的所有依赖。每次运行 CI 时，在这个 Base 镜像的基础上去构建新一个新的包含分支代码的 Build 镜像，然后运行该镜像进行测试。测试完毕后将该镜像删除。这就是一个完整的构建周期。</p>
+<p><img src="/static/img/build_a_ci_pipeline_with_jenkins_and_docker/image-20200929162337900.png" alt="image-20200929162337900"></p>
+<h2 id="配置-docker">配置 Docker<a href="#配置-docker" class="hanchor" ariaLabel="Anchor">&#8983;</a> </h2>
+<h3 id="构建-base-镜像">构建 Base 镜像<a href="#构建-base-镜像" class="hanchor" ariaLabel="Anchor">&#8983;</a> </h3>
+<p>既然是 Ruby 的环境，当然是使用官方的 Ruby 镜像作为基础镜像，能省去不少麻烦（例如安装 rbenv 等）。</p>
+<p>构建 Base 镜像的 Dockerfile：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-dockerfile" data-lang="dockerfile"><span style="color:#66d9ef">FROM</span><span style="color:#e6db74"> ruby:2.4.3</span><span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#66d9ef">LABEL</span> maintainer<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;Emilio&#34;</span><span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#75715e"># 设置 App 目录环境变量</span><span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#66d9ef">ENV</span> APP_HOME /usr/src/app_home/<span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#75715e"># Copy Gemfile 用以预先安装 Gem</span><span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#66d9ef">COPY</span> Gemfile Gemfile.lock $APP_HOME<span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#75715e"># 设定 App 目录为工作目录</span><span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#66d9ef">WORKDIR</span><span style="color:#e6db74"> $APP_HOME</span><span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#75715e"># 配置 Gem 源</span><span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#66d9ef">RUN</span> gem sources --add https://gems.ruby-china.com/ --remove https://rubygems.org/<span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#75715e"># 指定 bundler 版本</span><span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#66d9ef">RUN</span> gem install bundler -v 1.17.3<span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#75715e"># 安装 PostgreSQL 12 以及其它环境依赖</span><span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#66d9ef">RUN</span> apt-get update <span style="color:#f92672">&amp;&amp;</span> apt-get install -y lsb-release <span style="color:#f92672">&amp;&amp;</span> apt-get clean all<span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#66d9ef">RUN</span> wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add -<span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#66d9ef">RUN</span> echo <span style="color:#e6db74">&#34;deb http://apt.postgresql.org/pub/repos/apt/ `lsb_release -cs`-pgdg main&#34;</span> | tee /etc/apt/sources.list.d/pgdg.list<span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#66d9ef">RUN</span> apt-get update <span style="color:#f92672">&amp;&amp;</span> apt-get install -y postgresql-12 postgresql-client-12 nodejs redis-server libsndfile-dev <span style="color:#f92672">&amp;&amp;</span> apt-get clean all<span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#75715e"># 安装 ffmpeg</span><span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#66d9ef">RUN</span> echo <span style="color:#e6db74">&#34;deb http://www.deb-multimedia.org jessie main non-free&#34;</span> &gt;&gt; /etc/apt/sources.list<span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#66d9ef">RUN</span> echo <span style="color:#e6db74">&#34;deb-src http://www.deb-multimedia.org jessie main non-free&#34;</span> &gt;&gt; /etc/apt/sources.list<span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#66d9ef">RUN</span> apt-get update<span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#66d9ef">RUN</span> apt-get install -y --force-yes deb-multimedia-keyring<span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#66d9ef">RUN</span> apt-get update<span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#66d9ef">RUN</span> apt-get install -y ffmpeg<span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#75715e"># 安装 Gem</span><span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#66d9ef">RUN</span> bundle install<span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#75715e"># 依赖安装完毕后就不需要 App 目录了</span><span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#66d9ef">RUN</span> rm -rf $APP_HOME<span style="color:#960050;background-color:#1e0010">
+</span></code></pre></div><p>构建 Base 镜像，命名镜像为 rspec-base</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">sudo docker image build -t rspec-base:1.0.0 .
+</code></pre></div><p>Base 镜像就构建成功了</p>
+<p><img src="/static/img/build_a_ci_pipeline_with_jenkins_and_docker/image-20200929164913912.png" alt="image-20200929164913912"></p>
+<h3 id="构建测试镜像">构建测试镜像<a href="#构建测试镜像" class="hanchor" ariaLabel="Anchor">&#8983;</a> </h3>
+<p>现在有了 rspec-base 镜像，就可以在该镜像的基础上构建每次 CI 都需要构建的测试镜像了。</p>
+<p>构建测试镜像的 Dockerfile：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-dockerfile" data-lang="dockerfile"><span style="color:#66d9ef">FROM</span><span style="color:#e6db74"> rspec-base:1.0.0</span><span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#66d9ef">LABEL</span> maintainer<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;Emilio&#34;</span><span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#75715e"># 设置项目目录环境变量</span><span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#66d9ef">ENV</span> APP_HOME /usr/src/app_home/<span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#75715e"># ./project 为 Jenkins 每次拉取代码后存放项目的目录</span><span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#66d9ef">COPY</span> ./project $APP_HOME<span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#75715e"># 运行测试的启动项脚本</span><span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#66d9ef">COPY</span> docker-entrypoint.sh /etc/docker-entrypoint.sh<span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#66d9ef">RUN</span> chmod +x /etc/docker-entrypoint.sh<span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#66d9ef">WORKDIR</span><span style="color:#e6db74"> $APP_HOME</span><span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#66d9ef">ENTRYPOINT</span> [<span style="color:#e6db74">&#34;/etc/docker-entrypoint.sh&#34;</span>]<span style="color:#960050;background-color:#1e0010">
+</span></code></pre></div><p>启动项脚本 docker-entrypoint.sh：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash"><span style="color:#75715e">#!/bin/bash
+</span><span style="color:#75715e"></span><span style="color:#75715e"># 启动 PostgreSQL</span>
+/etc/init.d/postgresql start
+<span style="color:#75715e"># 创建用户以及测试数据库</span>
+su - postgres -c <span style="color:#e6db74">&#34;createuser -s root&#34;</span> <span style="color:#f92672">&amp;&amp;</span> su - root -c <span style="color:#e6db74">&#34;createdb &#39;test&#39;&#34;</span>
+<span style="color:#75715e"># 启动 redis</span>
+/etc/init.d/redis-server start
+<span style="color:#75715e"># 安装 Gem</span>
+bundle install
+bundle exec rails db:migrate:reset RAILS_ENV<span style="color:#f92672">=</span>test &gt; /dev/null
+<span style="color:#75715e"># 由于我们有一张表过大，进行了分表，需要通过 SQL 直接创建分表，这一步对其他人不是必要的</span>
+psql -d test &lt; db/sql/20200326_partition/01_create_tables.sql &gt; /dev/null
+psql -d test &lt; db/sql/20200326_partition/02_create_stats_table.sql &gt; /dev/null
+psql -d test &lt; db/sql/20200326_partition/04_create_index.sql &gt; /dev/null
+<span style="color:#75715e"># 执行 RSpec 测试并输出测试报告</span>
+bundle exec rake -r <span style="color:#e6db74">&#39;ci/reporter/rake/rspec&#39;</span> ci:setup:rspec spec RAILS_ENV<span style="color:#f92672">=</span>test
+</code></pre></div><p>构建测试镜像，命名为 rspec-build</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">sudo docker image build -t rspec-build:1 .
+</code></pre></div><p><img src="/static/img/build_a_ci_pipeline_with_jenkins_and_docker/image-20200929171006412.png" alt="image-20200929171006412"></p>
+<h3 id="运行测试">运行测试<a href="#运行测试" class="hanchor" ariaLabel="Anchor">&#8983;</a> </h3>
+<p>尝试进行测试</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">sudo docker run --rm -t 2e828daf7fd2
+</code></pre></div><p><img src="/static/img/build_a_ci_pipeline_with_jenkins_and_docker/image-20200929173416158.png" alt="image-20200929173416158"></p>
+<p>在安装完必要的 Gem 后，测试也成功进行了。</p>
+<p>但是这个流程有一个潜在问题。</p>
+<h3 id="潜在问题">潜在问题<a href="#潜在问题" class="hanchor" ariaLabel="Anchor">&#8983;</a> </h3>
+<p>就目前来说，Base 镜像 bundle install 之后安装好的 gem 都是已经存在于镜像中的，因此测试镜像 bundle install 的时候就可以复用这些 gem，测试会进行得很快。</p>
+<p>但是如果项目未来有新增的 gem，这个 gem 就不存在于已有的镜像中，于是每次运行测试镜像的时候都需要重新下载安装这个 gem，这会很大程度上增加 CI 的运行时间。这是不可接受的。</p>
+<h3 id="解决方案">解决方案<a href="#解决方案" class="hanchor" ariaLabel="Anchor">&#8983;</a> </h3>
+<p>可以利用 Docker 的 volume 解决这个问题。</p>
+<p>使用宿主机的一个文件夹来存放 bundle install 后安装的 gem，运行测试镜像时将该 volume 挂载在容器上，后面运行的测试就都能复用新增的 gem，而不需要每次都重新下载安装了。</p>
+<p>创建一个 volume，命名为 docker-bundle：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">sudo docker volume create docker-bundle
+</code></pre></div><p>进入容器查看 gem 的安装路径</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">sudo docker run --rm -it --entrypoint<span style="color:#f92672">=</span>/bin/bash rpsec-build:1
+</code></pre></div><p><img src="/static/img/build_a_ci_pipeline_with_jenkins_and_docker/image-20200929174944998.png" alt="image-20200929174944998"></p>
+<p>所以运行测试的时候将 <code>docker-bundle</code> 挂载在容器的 <code>/usr/local/bundle</code>上即可。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">sudo docker run --rm -t -v docker-bundle:/usr/local/bundle rpsec-build:1
+</code></pre></div><h2 id="配置-jenkins">配置 Jenkins<a href="#配置-jenkins" class="hanchor" ariaLabel="Anchor">&#8983;</a> </h2>
+<h3 id="触发构建">触发构建<a href="#触发构建" class="hanchor" ariaLabel="Anchor">&#8983;</a> </h3>
+<p>由于我们使用的是腾讯的 coding.net 作为代码托管平台（当然是因为免费啦，GitHub 中国大陆访问太慢。之后会考虑搭建 GitLab），所以需要在 Jenkins 上安装 Coding Webhook Plugin，用来处理 coding.net 发送过来的 Webhook 请求。</p>
+<p><img src="/static/img/build_a_ci_pipeline_with_jenkins_and_docker/image-20200929180614641.png" alt="image-20200929180614641"></p>
+<p>然后在 Pipeline 中配置 Build Triggers</p>
+<p><img src="/static/img/build_a_ci_pipeline_with_jenkins_and_docker/image-20200929180941425.png" alt="image-20200929180941425"></p>
+<p>在 coding.net 中配置 Webhook</p>
+<p><img src="/static/img/build_a_ci_pipeline_with_jenkins_and_docker/image-20200929181111722.png" alt="image-20200929181111722"></p>
+<h3 id="配置-pipeline-script">配置 Pipeline Script<a href="#配置-pipeline-script" class="hanchor" ariaLabel="Anchor">&#8983;</a> </h3>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-groovy" data-lang="groovy">pipeline <span style="color:#f92672">{</span>
+    agent <span style="color:#f92672">{</span>
+        label <span style="color:#e6db74">&#39;master&#39;</span>
+    <span style="color:#f92672">}</span>
+
+    options <span style="color:#f92672">{</span>
+        timestamps<span style="color:#f92672">()</span>
+        ansiColor<span style="color:#f92672">(</span><span style="color:#e6db74">&#39;xterm&#39;</span><span style="color:#f92672">)</span>
+    <span style="color:#f92672">}</span>
+
+    stages <span style="color:#f92672">{</span>
+        stage<span style="color:#f92672">(</span><span style="color:#e6db74">&#39;Checkout Branch&#39;</span><span style="color:#f92672">)</span> <span style="color:#f92672">{</span>
+            steps <span style="color:#f92672">{</span>
+                <span style="color:#75715e">// 把项目放在 workspace 下的 project 文件夹中
+</span><span style="color:#75715e"></span>                dir<span style="color:#f92672">(</span><span style="color:#e6db74">&#39;project&#39;</span><span style="color:#f92672">)</span> <span style="color:#f92672">{</span>
+                    <span style="color:#75715e">// 运行测试前先清空文件夹
+</span><span style="color:#75715e"></span>                    deleteDir<span style="color:#f92672">()</span>
+                    <span style="color:#75715e">// 拉取代码
+</span><span style="color:#75715e"></span>                    checkout changelog: <span style="color:#66d9ef">false</span><span style="color:#f92672">,</span> poll: <span style="color:#66d9ef">false</span><span style="color:#f92672">,</span> scm: <span style="color:#f92672">[</span>$class<span style="color:#f92672">:</span> <span style="color:#e6db74">&#39;GitSCM&#39;</span><span style="color:#f92672">,</span> branches: <span style="color:#f92672">[[</span>name: <span style="color:#e6db74">&#39;master&#39;</span><span style="color:#f92672">]],</span> doGenerateSubmoduleConfigurations: <span style="color:#66d9ef">false</span><span style="color:#f92672">,</span> extensions: <span style="color:#f92672">[[</span>$class<span style="color:#f92672">:</span> <span style="color:#e6db74">&#39;LocalBranch&#39;</span><span style="color:#f92672">],</span> <span style="color:#f92672">[</span>$class<span style="color:#f92672">:</span> <span style="color:#e6db74">&#39;CheckoutOption&#39;</span><span style="color:#f92672">,</span> timeout: <span style="color:#ae81ff">60</span><span style="color:#f92672">],</span> <span style="color:#f92672">[</span>$class<span style="color:#f92672">:</span> <span style="color:#e6db74">&#39;CloneOption&#39;</span><span style="color:#f92672">,</span> noTags: <span style="color:#66d9ef">true</span><span style="color:#f92672">,</span> reference: <span style="color:#e6db74">&#39;&#39;</span><span style="color:#f92672">,</span> shallow: <span style="color:#66d9ef">false</span><span style="color:#f92672">,</span> timeout: <span style="color:#ae81ff">60</span><span style="color:#f92672">]],</span> submoduleCfg: <span style="color:#f92672">[],</span> userRemoteConfigs: <span style="color:#f92672">[[</span>credentialsId: <span style="color:#e6db74">&#39;credentialsId&#39;</span><span style="color:#f92672">,</span> name: <span style="color:#e6db74">&#39;origin&#39;</span><span style="color:#f92672">,</span> refspec: <span style="color:#e6db74">&#39;git refspec&#39;</span><span style="color:#f92672">,</span> url: <span style="color:#e6db74">&#39;git url&#39;</span><span style="color:#f92672">]]]</span>
+                <span style="color:#f92672">}</span>
+            <span style="color:#f92672">}</span>
+        <span style="color:#f92672">}</span>
+        stage<span style="color:#f92672">(</span><span style="color:#e6db74">&#39;Build RSpec Image&#39;</span><span style="color:#f92672">)</span> <span style="color:#f92672">{</span>
+            steps <span style="color:#f92672">{</span>
+                <span style="color:#75715e">// 基于 rspec-base 镜像构建测试镜像，tag 为每次构建的 BUILD_NUMBER
+</span><span style="color:#75715e"></span>                sh <span style="color:#e6db74">&#34;docker image build -t rspec-build:${env.BUILD_NUMBER} .&#34;</span>
+            <span style="color:#f92672">}</span>
+        <span style="color:#f92672">}</span>
+        stage<span style="color:#f92672">(</span><span style="color:#e6db74">&#39;Run RSpec&#39;</span><span style="color:#f92672">)</span> <span style="color:#f92672">{</span>
+            steps <span style="color:#f92672">{</span>
+                <span style="color:#75715e">// 运行测试
+</span><span style="color:#75715e"></span>                <span style="color:#75715e">// 除了挂载 docker-bundle 外，还挂载了 workspace 中的 reports 用来存放测试完成后的 JUnit 测试结果报告
+</span><span style="color:#75715e"></span>                sh <span style="color:#e6db74">&#34;docker run --rm -t -v docker-bundle:/usr/local/bundle -v ${env.WORKSPACE}/reports:/usr/src/app_home/spec/reports rspec-build:${env.BUILD_NUMBER}&#34;</span>
+            <span style="color:#f92672">}</span>
+        <span style="color:#f92672">}</span>
+    <span style="color:#f92672">}</span>
+
+    post <span style="color:#f92672">{</span>
+        always <span style="color:#f92672">{</span>
+            <span style="color:#75715e">// CI 完毕后始终保证测试镜像文件会被删除
+</span><span style="color:#75715e"></span>            sh <span style="color:#e6db74">&#34;docker image rm rspec-build:${env.BUILD_NUMBER}&#34;</span>
+            <span style="color:#75715e">// 发布测试报告
+</span><span style="color:#75715e"></span>            junit <span style="color:#e6db74">&#39;reports/*.xml&#39;</span>
+        <span style="color:#f92672">}</span>
+    <span style="color:#f92672">}</span>
+<span style="color:#f92672">}</span>
+</code></pre></div><h2 id="运行结果">运行结果<a href="#运行结果" class="hanchor" ariaLabel="Anchor">&#8983;</a> </h2>
+<p>尝试提了几个 PR，故意改错几个测试用例，Jenkins 正常触发了构建，JUnit 测试报告也正常发布</p>
+<p><img src="/static/img/build_a_ci_pipeline_with_jenkins_and_docker/image-20200929182859757.png" alt="image-20200929182859757"></p>
+<p><img src="/static/img/build_a_ci_pipeline_with_jenkins_and_docker/image-20200929182815281.png" alt="image-20200929182815281"></p>
+<h2 id="参考文章">参考文章<a href="#参考文章" class="hanchor" ariaLabel="Anchor">&#8983;</a> </h2>
+<p><a href="https://blog.niclin.tw/2019/08/18/using-jenkins-and-docker-to-run-rails-rspec-ci/">https://blog.niclin.tw/2019/08/18/using-jenkins-and-docker-to-run-rails-rspec-ci/</a></p>
+
+      </div></div>
+
+  
+  
+<div class="pagination">
+    <div class="pagination__title">
+        <span class="pagination__title-h">Read other posts</span>
+        <hr />
+    </div>
+    <div class="pagination__buttons">
+        
+        
+        <span class="button next">
+            <a href="https://em1l1o.github.io/posts/trace_down_a_memory_leak_issue/">
+                <span class="button__text">实例内存泄露追溯</span>
+                <span class="button__icon">→</span>
+            </a>
+        </span>
+        
+    </div>
+</div>
+
+  
+
+  
+
+</div>
+
+  </div>
+
+  
+    <footer class="footer">
+  <div class="footer__inner">
+    
+      <div class="copyright">
+        <span>© 2020 Powered by <a href="http://gohugo.io">Hugo</a></span>
+    
+        <span>:: Theme made by <a href="https://twitter.com/panr">panr</a></span>
+      </div>
+  </div>
+</footer>
+
+<script src="https://em1l1o.github.io/assets/main.js"></script>
+<script src="https://em1l1o.github.io/assets/prism.js"></script>
+
+
+
+
+
+  
+</div>
+
+</body>
+</html>
