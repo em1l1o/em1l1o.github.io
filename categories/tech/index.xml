@@ -50,25 +50,14 @@ rails 的定时任务是由 gem whenever 写入 cron 来实现的，就可以执
     </item>
     
     <item>
-      <title>处理 AWS 分离 IAM Role 失败</title>
+      <title>Deal With the Failure of IAM Role Detachment</title>
       <link>https://em1l1o.github.io/posts/fix_iam_role_detachment_issue/</link>
       <pubDate>Mon, 14 Sep 2020 22:46:04 +0800</pubDate>
       
       <guid>https://em1l1o.github.io/posts/fix_iam_role_detachment_issue/</guid>
-      <description>背景 发现 sentry 实例已经有几天的实例监控数据缺失。登录实例进行检查，手动触发监控脚本，监控数据发送失败，请求响应显示：
+      <description>Background One day I found that we&amp;rsquo;ve lost days of monitoring data of some instances, so I logged into one of these instances and run the CloudWatch monitoring script manually to send some data to AWS. However, I got this message from AWS:
 The security token included in the request is expired
-由于调用 AWS 的服务、资源等都是需要对应权限（security credential）的，管理权限的方式之一便是绑定 IAM 角色来代替我们进行管理（我们现在的方式）。
-实例中 security credential 都是临时的凭证，有效时间很短。与实例绑定的 IAM 角色会在凭证过期之前（至少在过期前 5 分钟）自动刷新凭证。
-所以出现这样的响应可能是 IAM 角色出现了问题。
-定位问题 在实例中使用如下方式来查看实例的 security credential
-curl http://169.254.169.254/latest/meta-data/iam/security-credentials/EC2-individual-role 果然，在返回的响应中，Expiration 已经是在几天前，并且 LastUpdated 同样也是在几天前。
-IAM 角色出问题了。
-接下来先尝试了在 AWS Console 分离实例的 IAM 角色
-确认分离后，AWS 显示分离成功。
-接下来给实例绑定新建的 IAM 角色，绑定失败。响应如下：
-The association &amp;lt;AssociationId&amp;gt; is not the active association.
-使用 AWS CLI 查看当前所有实例的 IAM 文件配置关联
-aws ec2 describe-iam-instance-profile-associations 发现与问题实例绑定的 AssociationId 的 State 一直处于 disassociating 状态。</description>
+ Security credentials are required in order to use services and resources of AWS, and it is very convenient to manage these credentials via IAM roles, which is the way we&amp;rsquo;ve always done it.</description>
     </item>
     
   </channel>

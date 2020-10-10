@@ -2,24 +2,13 @@
 <html lang="en">
 <head>
   
-    <title>处理 AWS 分离 IAM Role 失败 :: Emilio&#39;s Murmurs</title>
+    <title>Deal With the Failure of IAM Role Detachment :: Emilio&#39;s Murmurs</title>
   
   <meta http-equiv="content-type" content="text/html; charset=utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="description" content="背景 发现 sentry 实例已经有几天的实例监控数据缺失。登录实例进行检查，手动触发监控脚本，监控数据发送失败，请求响应显示：
+<meta name="description" content="Background One day I found that we&amp;rsquo;ve lost days of monitoring data of some instances, so I logged into one of these instances and run the CloudWatch monitoring script manually to send some data to AWS. However, I got this message from AWS:
 The security token included in the request is expired
-由于调用 AWS 的服务、资源等都是需要对应权限（security credential）的，管理权限的方式之一便是绑定 IAM 角色来代替我们进行管理（我们现在的方式）。
-实例中 security credential 都是临时的凭证，有效时间很短。与实例绑定的 IAM 角色会在凭证过期之前（至少在过期前 5 分钟）自动刷新凭证。
-所以出现这样的响应可能是 IAM 角色出现了问题。
-定位问题 在实例中使用如下方式来查看实例的 security credential
-curl http://169.254.169.254/latest/meta-data/iam/security-credentials/EC2-individual-role 果然，在返回的响应中，Expiration 已经是在几天前，并且 LastUpdated 同样也是在几天前。
-IAM 角色出问题了。
-接下来先尝试了在 AWS Console 分离实例的 IAM 角色
-确认分离后，AWS 显示分离成功。
-接下来给实例绑定新建的 IAM 角色，绑定失败。响应如下：
-The association &amp;lt;AssociationId&amp;gt; is not the active association.
-使用 AWS CLI 查看当前所有实例的 IAM 文件配置关联
-aws ec2 describe-iam-instance-profile-associations 发现与问题实例绑定的 AssociationId 的 State 一直处于 disassociating 状态。" />
+ Security credentials are required in order to use services and resources of AWS, and it is very convenient to manage these credentials via IAM roles, which is the way we&amp;rsquo;ve always done it." />
 <meta name="keywords" content="" />
 <meta name="robots" content="noodp" />
 <link rel="canonical" href="https://em1l1o.github.io/posts/fix_iam_role_detachment_issue/" />
@@ -64,10 +53,10 @@ if (!doNotTrack) {
 
 <meta property="og:locale" content="en" />
 <meta property="og:type" content="article" />
-<meta property="og:title" content="处理 AWS 分离 IAM Role 失败 :: Emilio&#39;s Murmurs">
-<meta property="og:description" content="处理 AWS 分离 IAM Role 失败" />
+<meta property="og:title" content="Deal With the Failure of IAM Role Detachment :: Emilio&#39;s Murmurs">
+<meta property="og:description" content="Deal with the failure of IAM role detachment." />
 <meta property="og:url" content="https://em1l1o.github.io/posts/fix_iam_role_detachment_issue/" />
-<meta property="og:site_name" content="处理 AWS 分离 IAM Role 失败" />
+<meta property="og:site_name" content="Deal With the Failure of IAM Role Detachment" />
 
   <meta property="og:image" content="https://em1l1o.github.io/">
 
@@ -173,7 +162,7 @@ if (!doNotTrack) {
     
 <div class="post">
   <h1 class="post-title">
-    <a href="https://em1l1o.github.io/posts/fix_iam_role_detachment_issue/">处理 AWS 分离 IAM Role 失败</a></h1>
+    <a href="https://em1l1o.github.io/posts/fix_iam_role_detachment_issue/">Deal With the Failure of IAM Role Detachment</a></h1>
   <div class="post-meta">
     
       <span class="post-date">
@@ -198,62 +187,67 @@ if (!doNotTrack) {
   
 
   <div class="post-content"><div>
-        <h2 id="背景">背景<a href="#背景" class="hanchor" ariaLabel="Anchor">&#8983;</a> </h2>
-<p>发现 sentry 实例已经有几天的实例监控数据缺失。登录实例进行检查，手动触发监控脚本，监控数据发送失败，请求响应显示：</p>
+        <h2 id="background">Background<a href="#background" class="hanchor" ariaLabel="Anchor">&#8983;</a> </h2>
+<p>One day I found that we&rsquo;ve lost days of monitoring data of some instances, so I logged into one of these instances and run the CloudWatch monitoring script manually to send some data to AWS. However, I got this message from AWS:</p>
 <p><code>The security token included in the request is expired</code></p>
-<p>由于调用 AWS 的服务、资源等都是需要对应权限（security credential）的，管理权限的方式之一便是绑定 IAM 角色来代替我们进行管理（我们现在的方式）。</p>
-<p>实例中 security credential 都是临时的凭证，有效时间很短。与实例绑定的 IAM 角色会在凭证过期之前（至少在过期前 5 分钟）自动刷新凭证。</p>
-<p>所以出现这样的响应可能是 IAM 角色出现了问题。</p>
-<h2 id="定位问题">定位问题<a href="#定位问题" class="hanchor" ariaLabel="Anchor">&#8983;</a> </h2>
-<p>在实例中使用如下方式来查看实例的 security credential</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">curl http://169.254.169.254/latest/meta-data/iam/security-credentials/EC2-individual-role
-</code></pre></div><p>果然，在返回的响应中，Expiration 已经是在几天前，并且 LastUpdated 同样也是在几天前。</p>
-<p>IAM 角色出问题了。</p>
-<p>接下来先尝试了在 AWS Console 分离实例的 IAM 角色</p>
+<blockquote>
+<p>Security credentials are required in order to use services and resources of AWS, and it is very convenient to manage these credentials via IAM roles, which is the way we&rsquo;ve always done it.</p>
+<blockquote>
+<p>Security credentials are temporary and have limited valid time. The IAM roles will refresh these credentials before they expire (at least 5 minutes before they expire).</p>
+</blockquote>
+</blockquote>
+<h2 id="locate-the-issue">Locate the Issue<a href="#locate-the-issue" class="hanchor" ariaLabel="Anchor">&#8983;</a> </h2>
+<p>I did the check on the security credential:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">curl http://169.254.169.254/latest/meta-data/iam/security-credentials/&lt;role_name&gt;
+</code></pre></div><p>As it turned out, the the response showed that  <code>Expiration</code>  was already days ago, as well as  <code>LastUpdated</code> .</p>
+<p>Something&rsquo;s wrong with the IAM role.</p>
+<p>Next up was trying to detach the role.</p>
 <p><img src="/static/img/fix_iam_role_detachment_issue/image2020-9-9_10-41-29.png" alt="image2020-9-9_10-41-29.png"></p>
 <p><img src="/static/img/fix_iam_role_detachment_issue/image2020-9-9_10-40-32.png" alt="image2020-9-9_10-40-32.png"></p>
-<p>确认分离后，AWS 显示分离成功。</p>
-<p>接下来给实例绑定新建的 IAM 角色，绑定失败。响应如下：</p>
+<p>AWS showed that detachment was successful.</p>
+<p>Then I tried to attach a new role to my instance, and I got:</p>
 <p><code>The association &lt;AssociationId&gt; is not the active association.</code></p>
-<p>使用 AWS CLI 查看当前所有实例的 IAM 文件配置关联</p>
+<p>Let&rsquo;s check the IAM instance profile associations using:</p>
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">aws ec2 describe-iam-instance-profile-associations
-</code></pre></div><p>发现与问题实例绑定的 AssociationId 的 State 一直处于 disassociating 状态。</p>
-<p>接着想试试直接给实例绑定新建的 IAM 角色，使用</p>
+</code></pre></div><p>The response revealed some information about the corresponding association:  <code>&quot;State&quot;: &quot;disassociating&quot;</code> .</p>
+<p>It turned out that the association was stuck in the state of disassociating.</p>
+<p>What about associating a new role regardlessly using:</p>
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">aws ec2 associate-iam-instance-profile 
-</code></pre></div><p>返回的结果看起来没有报错。</p>
-<p>然后再次使用该命令查看实例关联关系。</p>
+</code></pre></div><p>The response was ok.</p>
+<p>Checked the IAM instance profile associations again:</p>
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">aws ec2 describe-iam-instance-profile-associations
-</code></pre></div><p>发现新绑定的实例关系的 State 为 associating，过一段时间后的几次查看状态依旧。</p>
-<p>最后，尝试直接替换当前卡住的关联，使用</p>
+</code></pre></div><p>Response showed that state of the new association was  <code>associating</code>  and it stayed that way for hours. It&rsquo;s also stuck.</p>
+<p>Also tried to replace the stuck association using:</p>
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">aws ec2 replace-iam-instance-profile-association
-</code></pre></div><p>返回了该响应</p>
+</code></pre></div><p>I got:</p>
 <p><code>The association &lt;AssociationId&gt; is not the active association.</code></p>
-<p>AWS 提供的 IAM 操作均无效，目前唯一的选择就是替换实例。</p>
-<p>首先在 AWS Console 中创建 AMI 镜像</p>
+<p>WTF?</p>
+<p>It seemed that another option was replacing the instance with a functional one.</p>
+<p>So I tried to create an image from the instance I was about to replace.</p>
 <p><img src="/static/img/fix_iam_role_detachment_issue/image2020-9-9_11-30-59.png" alt="image2020-9-9_11-30-59.png"></p>
-<p>不幸的是，创建镜像请求发出后，在 AMI 列表中，新建的 AMI 状态一直卡在 pending；等待一个小时后，重试创建了几次镜像，结果依旧。</p>
-<p>猜想是实例的 IAM Bug 导致 AMI 创建失败。</p>
-<h2 id="解决方案">解决方案<a href="#解决方案" class="hanchor" ariaLabel="Anchor">&#8983;</a> </h2>
-<p>由于备份 EC2 本身由于 IAM 导致不可行，那就创建实例的 EBS 的快照，通过快照来替换实例。</p>
+<p>Unfortunately, in the list AMIs, the status of my newly created image was stuck in <code>pending</code> . And it stayed that way after my a few retries.</p>
+<p>It&rsquo;s reasonable to assume that it&rsquo;s the IAM bug that caused these problems.</p>
+<h2 id="solution">Solution<a href="#solution" class="hanchor" ariaLabel="Anchor">&#8983;</a> </h2>
+<p>It&rsquo;s impossible to create an image from the instance itself, let&rsquo;s try creating a snapshot of EBS.</p>
 <ol>
 <li>
-<p>EBS Volumes 中选中与实例绑定的 volume，然后创建快照</p>
+<p>Select the corresponding volume in EBS Volumes and select create snapshot.</p>
 <p><img src="/static/img/fix_iam_role_detachment_issue/image2020-9-9_11-54-34.png" alt="image2020-9-9_11-54-34.png"></p>
-<p>可以通过选中 volume 后查看与之绑定的 instance id 确定关系</p>
+<p>Check the relation between volume and instance id</p>
 <p><img src="/static/img/fix_iam_role_detachment_issue/image2020-9-9_11-56-8.png" alt="image2020-9-9_11-56-8.png"></p>
 <p><img src="/static/img/fix_iam_role_detachment_issue/image2020-9-9_11-44-57.png" alt="image2020-9-9_11-44-57.png"></p>
 </li>
 <li>
-<p>选中 Snapshots，在其中找到刚刚创建好的快照，然后选择创建镜像</p>
+<p>Go to Snapshots, select the snapshot just created and create an image from it.</p>
 <p><img src="/static/img/fix_iam_role_detachment_issue/image2020-9-9_11-57-28.png" alt="image2020-9-9_11-57-28.png"></p>
-<p>可以选中查看该快照对应的 volume id</p>
+<p>Check the corresponding volume id</p>
 <p><img src="/static/img/fix_iam_role_detachment_issue/image2020-9-9_11-58-57.png" alt="image2020-9-9_11-58-57.png"></p>
 <p><img src="/static/img/fix_iam_role_detachment_issue/image2020-9-9_11-47-13.png" alt="image2020-9-9_11-47-13.png"></p>
-<p>等待镜像创建成功后，选中新建的镜像启动新的实例即可。</p>
+<p>After finishing creating the new image, launch a new instance from it.</p>
 </li>
 </ol>
-<h2 id="参考">参考<a href="#参考" class="hanchor" ariaLabel="Anchor">&#8983;</a> </h2>
-<p><a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/iam-roles-for-amazon-ec2.html">AWS IAM 角色指南</a></p>
+<h2 id="reference">Reference<a href="#reference" class="hanchor" ariaLabel="Anchor">&#8983;</a> </h2>
+<p><a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/iam-roles-for-amazon-ec2.html">AWS IAM Roles</a></p>
 
       </div></div>
 
