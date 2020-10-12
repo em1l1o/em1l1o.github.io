@@ -2,26 +2,13 @@
 <html lang="en">
 <head>
   
-    <title>实例内存泄露追溯 :: Emilio&#39;s Murmurs</title>
+    <title>Track Down a Ruby Memory Leak Issue :: Emilio&#39;s Murmurs</title>
   
   <meta http-equiv="content-type" content="text/html; charset=utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="description" content="背景 最近几天的生产环境实例内存使用频繁报警，登录 AWS 查看最近一个月内存使用的走向：
-最近一个月（甚至更久）以来，内存的使用量是不断上涨的，直到这几天逼近了报警阈值。
-这种情况在测试环境发生已久，测试环境的内存经常报警，原因是定时任务无法正常结束，时间一长就占用了越来越多的内存。
-测试环境的经验在前，登录生产环境后，先查看当前进程。果然发现在 CROND 进程下跑了很多子进程，都是 rails 中 schedule 跑的各种定时任务。一般来说，这些任务运行时间基本都在几秒左右，几秒后进程便结束了。
-而当前这些进程有的竟然在几个月前就启动了。
-因为一直没有时间去深挖内在的原因，一直以来的做法就是 kill 卡死的进程就完了。而这次想要彻底解决这个问题。
-定位问题 当看到进程卡死，第一想法是 zombie。
-ps -e uf 显示所有卡住的进程均为 Sleep 状态。
-再进一步查看其父进程的系统调用
-sudo strace -p 其父进程所处进程调用均为 wait4()，即指定的子进程只要退出，其占用的资源就会被立即释放，子进程的 entry point 也不会再出现在进程表中。
-因此卡死的进程并非 zombie。
-再次查看子进程所处的系统调用，发现所有的进程都是卡在了
-futex(0xAddress, FUTEX_WAIT_PRIVATE, ...)
- Futex是一种用户态和内核态混合的同步机制。首先，同步的进程间通过 mmap 共享一段内存，futex 变量就位于这段共享的内存中且操作是原子的，当进程尝试进入互斥区或者退出互斥区的时候，先去查看共享内存中的 futex 变量，如果没有竞争发生，则只修改 futex，而不用再执行系统调用了。而当通过访问 futex 变量告诉进程有竞争发生，则还是得执行系统调用去完成相应的处理。简单的说，futex 就是通过在用户态的检查，如果了解到没有竞争就不用陷入内核了，减少了不必要的系统调用，大大提高了系统效率。参考文章
- 这里就奇怪了，因为执行的定时任务并没有涉及到线程相关操作，且通过 crontab 写入的定时任务运行一切正常，卡住的全是 rails 里 schedule 写入的定时任务。于是搜索范围可以缩小到 rails 上了。
-rails 的定时任务是由 gem whenever 写入 cron 来实现的，就可以执行定时任务这一点来说，whenever 是可以被排除嫌疑的。那么就需要看看定时任务具体执行的命令了。" />
+<meta name="description" content="Background I found that our production instances memory utilization exceeded the threshold frequently in the past few weeks. This was what it looked like:
+In the past one month (even longer), there&amp;rsquo;s an incremental memory consumption in our application. And one day, it exceeded the line.
+Actually, the same had been happening to our test instance for a long time, due to many cron jobs that won&amp;rsquo;t exit as expected. As time goes by, more and more memory was consumed by them." />
 <meta name="keywords" content="" />
 <meta name="robots" content="noodp" />
 <link rel="canonical" href="https://em1l1o.github.io/posts/trace_down_a_memory_leak_issue/" />
@@ -66,10 +53,10 @@ if (!doNotTrack) {
 
 <meta property="og:locale" content="en" />
 <meta property="og:type" content="article" />
-<meta property="og:title" content="实例内存泄露追溯 :: Emilio&#39;s Murmurs">
-<meta property="og:description" content="实例内存泄露追溯" />
+<meta property="og:title" content="Track Down a Ruby Memory Leak Issue :: Emilio&#39;s Murmurs">
+<meta property="og:description" content="Track down a Ruby memory leak issue." />
 <meta property="og:url" content="https://em1l1o.github.io/posts/trace_down_a_memory_leak_issue/" />
-<meta property="og:site_name" content="实例内存泄露追溯" />
+<meta property="og:site_name" content="Track Down a Ruby Memory Leak Issue" />
 
   <meta property="og:image" content="https://em1l1o.github.io/">
 
@@ -175,7 +162,7 @@ if (!doNotTrack) {
     
 <div class="post">
   <h1 class="post-title">
-    <a href="https://em1l1o.github.io/posts/trace_down_a_memory_leak_issue/">实例内存泄露追溯</a></h1>
+    <a href="https://em1l1o.github.io/posts/trace_down_a_memory_leak_issue/">Track Down a Ruby Memory Leak Issue</a></h1>
   <div class="post-meta">
     
       <span class="post-date">
@@ -208,46 +195,45 @@ if (!doNotTrack) {
   
 
   <div class="post-content"><div>
-        <h2 id="背景"><strong>背景</strong><a href="#背景" class="hanchor" ariaLabel="Anchor">&#8983;</a> </h2>
-<p>最近几天的生产环境实例内存使用频繁报警，登录 AWS 查看最近一个月内存使用的走向：</p>
+        <h2 id="background"><strong>Background</strong><a href="#background" class="hanchor" ariaLabel="Anchor">&#8983;</a> </h2>
+<p>I found that our production instances memory utilization exceeded the threshold frequently in the past few weeks. This was what it looked like:</p>
 <p><img src="/static/img/trace_down_a_memory_leak_issue/production_mem_utl.png" alt="production_mem_utl.png"></p>
-<p>最近一个月（甚至更久）以来，内存的使用量是不断上涨的，直到这几天逼近了报警阈值。</p>
-<p>这种情况在测试环境发生已久，测试环境的内存经常报警，原因是定时任务无法正常结束，时间一长就占用了越来越多的内存。</p>
-<p>测试环境的经验在前，登录生产环境后，先查看当前进程。果然发现在 CROND 进程下跑了很多子进程，都是 rails 中 schedule 跑的各种定时任务。一般来说，这些任务运行时间基本都在几秒左右，几秒后进程便结束了。</p>
-<p>而当前这些进程有的竟然在几个月前就启动了。</p>
-<p>因为一直没有时间去深挖内在的原因，一直以来的做法就是 kill 卡死的进程就完了。而这次想要彻底解决这个问题。</p>
-<h2 id="定位问题"><strong>定位问题</strong><a href="#定位问题" class="hanchor" ariaLabel="Anchor">&#8983;</a> </h2>
-<p>当看到进程卡死，第一想法是 zombie。</p>
+<p>In the past one month (even longer), there&rsquo;s an incremental memory consumption in our application.  And one day, it exceeded the line.</p>
+<p>Actually, the same had been happening to our test instance for a long time, due to many  cron jobs that won&rsquo;t exit as expected. As time goes by, more and more memory was consumed by them.</p>
+<p>Had the experience in mind, I checked the processes in production instances:</p>
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">ps -e uf
-</code></pre></div><p>显示所有卡住的进程均为 Sleep 状态。</p>
-<p>再进一步查看其父进程的系统调用</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">sudo strace -p
-</code></pre></div><p>其父进程所处进程调用均为 wait4()，即指定的子进程只要退出，其占用的资源就会被立即释放，子进程的 entry point 也不会再出现在进程表中。</p>
-<p>因此卡死的进程并非 zombie。</p>
-<p>再次查看子进程所处的系统调用，发现所有的进程都是卡在了</p>
+</code></pre></div><p>As it turned out, process  <code>crond</code> forked many children processes whose <code>STAT</code> were  <code>sleep</code> . And they were all scheduled by a gem called whenever. If everything went as expected, these processes would usually exit in seconds.</p>
+<p>However, some of these processes started even months ago.</p>
+<p>I decided to dive in.</p>
+<h2 id="trace-back-to-source"><strong>Trace Back to Source</strong><a href="#trace-back-to-source" class="hanchor" ariaLabel="Anchor">&#8983;</a> </h2>
+<p>Let&rsquo;s check the system call of <code>crond</code> :</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">sudo strace -p &lt;pid&gt;
+</code></pre></div><p>The output showed that the system call was <code>wait4()</code> , which meant that it&rsquo;s waiting for its children processes to exit, which they didn&rsquo;t.</p>
+<p>Checked all the stuck children processes, and their system calls were all</p>
 <p><code>futex(0xAddress, FUTEX_WAIT_PRIVATE, ...)</code></p>
 <blockquote>
-<p><strong>Futex是一种用户态和内核态混合的同步机制。首先，同步的进程间通过 mmap 共享一段内存，futex 变量就位于这段共享的内存中且操作是原子的，当进程尝试进入互斥区或者退出互斥区的时候，先去查看共享内存中的 futex 变量，如果没有竞争发生，则只修改 futex，而不用再执行系统调用了。而当通过访问 futex 变量告诉进程有竞争发生，则还是得执行系统调用去完成相应的处理。简单的说，futex 就是通过在用户态的检查，如果了解到没有竞争就不用陷入内核了，减少了不必要的系统调用，大大提高了系统效率。<a href="https://developer.aliyun.com/article/6043">参考文章</a></strong></p>
+<p>The futex() system call provides a method for waiting until a certain condition becomes true. It is typically used as a blocking construct in the context of shared-memory synchronization. When using futexes, the majority of the synchronization operations are performed in user space. A user-space program employs the futex() system call only when it is likely that the program has to block for a longer time until the condition becomes true. Other futex() operations can be used to wake any processes or threads waiting for a particular condition.</p>
+<p><a href="https://man7.org/linux/man-pages/man2/futex.2.html">Linux manual page</a></p>
 </blockquote>
-<p>这里就奇怪了，因为执行的定时任务并没有涉及到线程相关操作，且通过 crontab 写入的定时任务运行一切正常，卡住的全是 rails 里 schedule 写入的定时任务。于是搜索范围可以缩小到 rails 上了。</p>
-<p>rails 的定时任务是由 gem whenever 写入 cron 来实现的，就可以执行定时任务这一点来说，whenever 是可以被排除嫌疑的。那么就需要看看定时任务具体执行的命令了。</p>
-<p>查看所有 schedule 中执行的具体命令</p>
+<p>That&rsquo;s unexpected, because none of our cron jobs were involved in threads. And cron jobs scheduled by crontab behaved as expected. Cron jobs scheduled by our Rails application, however, were all stuck. So I could narrow down to Rails application.</p>
+<p>Our cron jobs were scheduled by gem whenever, let&rsquo;s see what commands were executed exactly:</p>
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">bundle exec whenever
-</code></pre></div><p>得到的返回</p>
+</code></pre></div><p>Output:</p>
 <p><img src="/static/img/trace_down_a_memory_leak_issue/image2020-9-9_18-25-23.png" alt="image2020-9-9_18-25-23.png"></p>
-<p>可以看到，所有的执行都是通过 bundle 调用 rake 任务或是 rails runner 完成。而这两种调用方式都存在卡死进程的情况。</p>
-<p>因此，范围可以更精准了：</p>
+<p>The output showed that <code>rake</code> or <code>rails runner</code> were executed through <code>bundle</code> , and the fact was that both commands got stuck.</p>
+<p>I got two suspects:</p>
 <ol>
-<li>bundler 有 Bug</li>
-<li>执行的 rails 代码存在某种共通的 Bug（共同的 gem 包、依赖、middleware 等）</li>
+<li>There&rsquo;s a bug in bundler</li>
+<li>There&rsquo;s a common issue while executing Rails cron jobs, sucha as common gems, dependencies, middleware, etc.</li>
 </ol>
-<p>接下来通过 GDB 进一步调查，attach 一个卡住的 ruby 进程的调用栈（C 语言层面的调用）</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">sudo gdb -p &lt;ProcessId&gt; info stack
-</code></pre></div><p><img src="/static/img/trace_down_a_memory_leak_issue/image2020-9-10_10-53-21.png" alt="image2020-9-10_10-53-21.png"></p>
-<p>调用栈显示最终卡在了 pthread_cond_wait（其它卡住的进程皆如此），某种共同的原因导致进程进入了 pthread_cond_wait。</p>
-<p>猜测 rb_thread_terminate_all() 可能会有一些线索，搜索了一下 rb_thread_terminate_all，得到了一篇非常有帮助的文章：</p>
+<p>Next up, I used  <code>gdb</code> to inspect the calling stack of a stuck process (in C):</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">sudo gdb -p &lt;pid&gt; info stack
+</code></pre></div><p>Output:</p>
+<p><img src="/static/img/trace_down_a_memory_leak_issue/image2020-9-10_10-53-21.png" alt="image2020-9-10_10-53-21.png"></p>
+<p>The output showed that the final call was pthread_cond_wait, and so were other stuck processes.</p>
+<p>I found  <code>rb_thread_terminate_all()</code> very appealing, so I googled it, and this article showed up, which was very helpful:</p>
 <p><strong><a href="https://medium.com/@zanker/finding-a-ruby-bug-with-gdb-56d6b321bc86">Finding a Ruby bug with GDB</a></strong></p>
-<p>文章作者遇到了和我们这次比较类似的问题，他们发现 Ruby 源码中，会使用 rb_threadptr_to_kill() 来标记一个线程的退出。源码：</p>
+<p>It turned out that Ruby would mark a thread to exit with <code>rb_threadptr_to_kill()</code> :</p>
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c" data-lang="c"><span style="color:#66d9ef">static</span> <span style="color:#66d9ef">void</span>
 <span style="color:#a6e22e">rb_threadptr_to_kill</span>(rb_thread_t <span style="color:#f92672">*</span>th)
 {
@@ -257,12 +243,12 @@ if (!doNotTrack) {
     th<span style="color:#f92672">-&gt;</span>errinfo <span style="color:#f92672">=</span> INT2FIX(TAG_FATAL);
     TH_JUMP_TAG(th, TAG_FATAL);
 }
-</code></pre></div><p>如果一个线程执行过程中有异常发生，相关信息会记录在 errinfo 中。</p>
-<p>查看一下我们当前卡死的 ruby 线程：</p>
+</code></pre></div><p>Information on errors would be stored in <code>errinfo</code> if there was an exception during execution.</p>
+<p>Let&rsquo;s inspect the information about current Ruby thread:</p>
 <p><img src="/static/img/trace_down_a_memory_leak_issue/2020-09-12_13-52-20.png" alt="2020-09-12_13-52-20.png"></p>
-<p>在所有卡死的线程中，可以看到线程状态是已停止，to_kill 的值已经被设置为 1，但 errinfo 的值都为 8（0x08，即 ruby 中的 nil 值）。</p>
-<p>根据文章作者的猜测，是某种异常（ThreadError）干扰了 Ruby VM 对一个线程状态的维护，导致线程无法优雅地退出。</p>
-<p>这样的代码可以复现进程卡死的异常：</p>
+<p>The output told me that current thread was marked as <code>THREAD_STOPPED</code> and <code>to_kill</code> was <code>1</code> . However, the <code>errinfo</code> was <code>8</code> (0x08, <code>nil</code> in Ruby).</p>
+<p>Some kind of error interfered with Ruby VM&rsquo;s maintenance of threads, causing threads won&rsquo;t exit as expected.</p>
+<p>Ruby code to reproduce:</p>
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-ruby" data-lang="ruby"><span style="color:#66d9ef">Thread</span><span style="color:#f92672">.</span>new <span style="color:#66d9ef">do</span>
   <span style="color:#66d9ef">loop</span> <span style="color:#66d9ef">do</span>
     puts <span style="color:#e6db74">&#34;Loop start&#34;</span>
@@ -277,34 +263,35 @@ if (!doNotTrack) {
     <span style="color:#66d9ef">end</span>
   <span style="color:#66d9ef">end</span>
 <span style="color:#66d9ef">end</span>
-</code></pre></div><p>也就是说：</p>
+</code></pre></div><p>Which meant:</p>
 <ol>
-<li>线程需要包含一个循环</li>
-<li>循环内是一个 begin&hellip;rescue&hellip;</li>
-<li>在 begin 块内，需要包含再次包含一个 begin&hellip;ensure&hellip;</li>
-<li>在 ensure 内抛出异常，被最外层的 rescue 捕获</li>
+<li>A <code>loop</code> in a thread</li>
+<li><code>begin</code> and <code>rescue</code> within the loop</li>
+<li><code>begin</code> and <code>ensure</code> within the outer <code>begin</code></li>
+<li>Exceptin within <code>ensure</code> , catched by the outer <code>rescue</code></li>
 </ol>
-<p>最外层的 rescue 是导致线程卡死的罪魁祸首，它让 Ruby VM 认为该线程是正常的，不会因异常而被 kill 掉。</p>
-<p>简而言之，这是 Ruby 的 Bug，但是我暂时无法在它的 C 源码中找到根源。最快的解决方案就是避免在 ensure 内抛出异常。</p>
-<p>问题的最快解（虽然不是最优）找到了，但是当前仍然不知道具体是哪的 ruby 代码导致了这个问题。</p>
-<p>于是进一步查看进程开启的线程：</p>
+<p>The outer <code>rescue</code> made Ruby VM decide that everything was ok with current thread and would not be killed because of the exception.</p>
+<p>In short, it&rsquo;s a Ruby bug.</p>
+<p>However, I could not find what on earth caused this issue in C. The quickest solution is to make sure NOT to raise any exception inside an ensure block.</p>
+<p>Next thing was to locate the problematic Ruby code.</p>
+<p>Let&rsquo;s check the threads within a stuck process:</p>
 <p><img src="/static/img/trace_down_a_memory_leak_issue/2020-09-12_14-23-15.png" alt="2020-09-12_14-23-15.png"></p>
-<p>P.S. 写这篇文章的时候问题已经解决，上方的结果是重新复现的。</p>
-<p>由于是通过 bundle 命令去执行 rake 任务的，ID 为 1 是名称为 bundle 线程；在进程中生成的 ID 为 2 的线程则是我故意导致进程卡死的代码所在文件。</p>
-<p>接下来通过排查，找到了导致进程卡死的代码，是名称为 &ldquo;agent_thread.r*&rdquo; 的文件，查找后发现是我们使用的 newrelic_rpm gem 导致的问题。</p>
-<p>而事实是，和 newrelic_rpm 的源码没有直接关系。因为导致抛异常的直接原因是，如果进程通过 Net::HTTP 在接收 gzip-encoded 请求的时候退出，会在调用 finish 时抛出 Zlib::BufError 的异常：</p>
+<p>(The issue was resolved when I&rsquo;m writing this article, output above was reproduced.)</p>
+<p>The rake task was executed through bundle, so ID 1 was the bundle thread. And ID 2 was the thread of the script I wrote to reproduce the bug.</p>
+<p>After thorough inspection, I found that the problematic code was located in a file called &ldquo;agent_thread.r*&rdquo;, which belonged to a gem: newrelic_rpm.</p>
+<p>The cause was that if the process exited while receiving gzip-encoded request via <code>Net::HTTP</code> , <code>Zlib::BufError</code> would be raised when <code>finish</code> was called, which was inside an ensure block:</p>
 <p><img src="/static/img/trace_down_a_memory_leak_issue/2020-09-12_16-10-09.png" alt="2020-09-12_16-10-09.png"></p>
-<p>目前这个问题已经被修复了（2020-05-31，但并非根本解决）：</p>
+<p>Now it&rsquo;s been fixed (2020-05-31), in Ruby:</p>
 <p><a href="https://github.com/ruby/ruby/pull/3164">https://github.com/ruby/ruby/pull/3164</a></p>
-<h2 id="解决方案"><strong>解决方案</strong><a href="#解决方案" class="hanchor" ariaLabel="Anchor">&#8983;</a> </h2>
-<p>问题找到了，要去解决就简单了。</p>
-<p>只需要在运行定时任务的时候，禁用掉 New Relic 即可。</p>
-<p>在 schedule.rb 内新增环境变量：</p>
+<h2 id="solution"><strong>Solution</strong><a href="#solution" class="hanchor" ariaLabel="Anchor">&#8983;</a> </h2>
+<p>Now it&rsquo;s easy to solve the problem:</p>
+<p>Disable New Relic when Rails runs cron jobs, and New Relic is unnecessary in our cron jobs.</p>
+<p>Just add one line in schedule.rb:</p>
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-ruby" data-lang="ruby">env <span style="color:#e6db74">&#39;NEW_RELIC_AGENT_ENABLED&#39;</span>, <span style="color:#66d9ef">false</span>
-</code></pre></div><h2 id="结果追踪"><strong>结果追踪</strong><a href="#结果追踪" class="hanchor" ariaLabel="Anchor">&#8983;</a> </h2>
-<p>从部署上线（2020-09-07）至今，再也没有发现卡死的定时任务。</p>
-<p>接下来的一段时间会继续观察。</p>
-<h2 id="参考链接"><strong>参考链接</strong><a href="#参考链接" class="hanchor" ariaLabel="Anchor">&#8983;</a> </h2>
+</code></pre></div><h2 id="outcome"><strong>Outcome</strong><a href="#outcome" class="hanchor" ariaLabel="Anchor">&#8983;</a> </h2>
+<p>Since the day I fixed  the problem (2020-09-07), no stuck process was found.</p>
+<p>I&rsquo;ll keep observing.</p>
+<h2 id="reference"><strong>Reference</strong><a href="#reference" class="hanchor" ariaLabel="Anchor">&#8983;</a> </h2>
 <p><a href="https://developer.aliyun.com/article/6043">https://developer.aliyun.com/article/6043</a></p>
 <p><a href="https://medium.com/@zanker/finding-a-ruby-bug-with-gdb-56d6b321bc86">https://medium.com/@zanker/finding-a-ruby-bug-with-gdb-56d6b321bc86</a></p>
 <p><a href="https://bugs.ruby-lang.org/issues/13882">https://bugs.ruby-lang.org/issues/13882</a></p>

@@ -187,7 +187,7 @@ if (!doNotTrack) {
   
 
   <div class="post-content"><div>
-        <h2 id="background">Background<a href="#background" class="hanchor" ariaLabel="Anchor">&#8983;</a> </h2>
+        <h2 id="background"><strong>Background</strong><a href="#background" class="hanchor" ariaLabel="Anchor">&#8983;</a> </h2>
 <p>One day I found that we&rsquo;ve lost days of monitoring data of some instances, so I logged into one of these instances and run the CloudWatch monitoring script manually to send some data to AWS. However, I got this message from AWS:</p>
 <p><code>The security token included in the request is expired</code></p>
 <blockquote>
@@ -196,7 +196,7 @@ if (!doNotTrack) {
 <p>Security credentials are temporary and have limited valid time. The IAM roles will refresh these credentials before they expire (at least 5 minutes before they expire).</p>
 </blockquote>
 </blockquote>
-<h2 id="locate-the-issue">Locate the Issue<a href="#locate-the-issue" class="hanchor" ariaLabel="Anchor">&#8983;</a> </h2>
+<h2 id="locate-the-issue"><strong>Locate the Issue</strong><a href="#locate-the-issue" class="hanchor" ariaLabel="Anchor">&#8983;</a> </h2>
 <p>I did the check on the security credential:</p>
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">curl http://169.254.169.254/latest/meta-data/iam/security-credentials/&lt;role_name&gt;
 </code></pre></div><p>As it turned out, the the response showed that  <code>Expiration</code>  was already days ago, as well as  <code>LastUpdated</code> .</p>
@@ -227,7 +227,7 @@ if (!doNotTrack) {
 <p><img src="/static/img/fix_iam_role_detachment_issue/image2020-9-9_11-30-59.png" alt="image2020-9-9_11-30-59.png"></p>
 <p>Unfortunately, in the list AMIs, the status of my newly created image was stuck in <code>pending</code> . And it stayed that way after my a few retries.</p>
 <p>It&rsquo;s reasonable to assume that it&rsquo;s the IAM bug that caused these problems.</p>
-<h2 id="solution">Solution<a href="#solution" class="hanchor" ariaLabel="Anchor">&#8983;</a> </h2>
+<h2 id="solution"><strong>Solution</strong><a href="#solution" class="hanchor" ariaLabel="Anchor">&#8983;</a> </h2>
 <p>It&rsquo;s impossible to create an image from the instance itself, let&rsquo;s try creating a snapshot of EBS.</p>
 <ol>
 <li>
@@ -246,7 +246,7 @@ if (!doNotTrack) {
 <p>After finishing creating the new image, launch a new instance from it.</p>
 </li>
 </ol>
-<h2 id="reference">Reference<a href="#reference" class="hanchor" ariaLabel="Anchor">&#8983;</a> </h2>
+<h2 id="reference"><strong>Reference</strong><a href="#reference" class="hanchor" ariaLabel="Anchor">&#8983;</a> </h2>
 <p><a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/iam-roles-for-amazon-ec2.html">AWS IAM Roles</a></p>
 
       </div></div>
@@ -263,7 +263,7 @@ if (!doNotTrack) {
         <span class="button previous">
             <a href="https://em1l1o.github.io/posts/trace_down_a_memory_leak_issue/">
                 <span class="button__icon">←</span>
-                <span class="button__text">实例内存泄露追溯</span>
+                <span class="button__text">Track Down a Ruby Memory Leak Issue</span>
             </a>
         </span>
         

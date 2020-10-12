@@ -26,27 +26,14 @@ CI 选型 之前接触过的 CI 工具有 CircleCI 以及 Jenkins，但是 Circl
     </item>
     
     <item>
-      <title>实例内存泄露追溯</title>
+      <title>Track Down a Ruby Memory Leak Issue</title>
       <link>https://em1l1o.github.io/posts/trace_down_a_memory_leak_issue/</link>
       <pubDate>Tue, 15 Sep 2020 00:09:21 +0800</pubDate>
       
       <guid>https://em1l1o.github.io/posts/trace_down_a_memory_leak_issue/</guid>
-      <description>背景 最近几天的生产环境实例内存使用频繁报警，登录 AWS 查看最近一个月内存使用的走向：
-最近一个月（甚至更久）以来，内存的使用量是不断上涨的，直到这几天逼近了报警阈值。
-这种情况在测试环境发生已久，测试环境的内存经常报警，原因是定时任务无法正常结束，时间一长就占用了越来越多的内存。
-测试环境的经验在前，登录生产环境后，先查看当前进程。果然发现在 CROND 进程下跑了很多子进程，都是 rails 中 schedule 跑的各种定时任务。一般来说，这些任务运行时间基本都在几秒左右，几秒后进程便结束了。
-而当前这些进程有的竟然在几个月前就启动了。
-因为一直没有时间去深挖内在的原因，一直以来的做法就是 kill 卡死的进程就完了。而这次想要彻底解决这个问题。
-定位问题 当看到进程卡死，第一想法是 zombie。
-ps -e uf 显示所有卡住的进程均为 Sleep 状态。
-再进一步查看其父进程的系统调用
-sudo strace -p 其父进程所处进程调用均为 wait4()，即指定的子进程只要退出，其占用的资源就会被立即释放，子进程的 entry point 也不会再出现在进程表中。
-因此卡死的进程并非 zombie。
-再次查看子进程所处的系统调用，发现所有的进程都是卡在了
-futex(0xAddress, FUTEX_WAIT_PRIVATE, ...)
- Futex是一种用户态和内核态混合的同步机制。首先，同步的进程间通过 mmap 共享一段内存，futex 变量就位于这段共享的内存中且操作是原子的，当进程尝试进入互斥区或者退出互斥区的时候，先去查看共享内存中的 futex 变量，如果没有竞争发生，则只修改 futex，而不用再执行系统调用了。而当通过访问 futex 变量告诉进程有竞争发生，则还是得执行系统调用去完成相应的处理。简单的说，futex 就是通过在用户态的检查，如果了解到没有竞争就不用陷入内核了，减少了不必要的系统调用，大大提高了系统效率。参考文章
- 这里就奇怪了，因为执行的定时任务并没有涉及到线程相关操作，且通过 crontab 写入的定时任务运行一切正常，卡住的全是 rails 里 schedule 写入的定时任务。于是搜索范围可以缩小到 rails 上了。
-rails 的定时任务是由 gem whenever 写入 cron 来实现的，就可以执行定时任务这一点来说，whenever 是可以被排除嫌疑的。那么就需要看看定时任务具体执行的命令了。</description>
+      <description>Background I found that our production instances memory utilization exceeded the threshold frequently in the past few weeks. This was what it looked like:
+In the past one month (even longer), there&amp;rsquo;s an incremental memory consumption in our application. And one day, it exceeded the line.
+Actually, the same had been happening to our test instance for a long time, due to many cron jobs that won&amp;rsquo;t exit as expected. As time goes by, more and more memory was consumed by them.</description>
     </item>
     
     <item>
