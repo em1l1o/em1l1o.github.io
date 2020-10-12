@@ -199,7 +199,7 @@ if (!doNotTrack) {
 <h2 id="locate-the-issue"><strong>Locate the Issue</strong><a href="#locate-the-issue" class="hanchor" ariaLabel="Anchor">&#8983;</a> </h2>
 <p>I did the check on the security credential:</p>
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">curl http://169.254.169.254/latest/meta-data/iam/security-credentials/&lt;role_name&gt;
-</code></pre></div><p>As it turned out, the the response showed that  <code>Expiration</code>  was already days ago, as well as  <code>LastUpdated</code> .</p>
+</code></pre></div><p>As it turned out, the response showed that  <code>Expiration</code>  was already days ago, as well as  <code>LastUpdated</code> .</p>
 <p>Something&rsquo;s wrong with the IAM role.</p>
 <p>Next up was trying to detach the role.</p>
 <p><img src="/static/img/fix_iam_role_detachment_issue/image2020-9-9_10-41-29.png" alt="image2020-9-9_10-41-29.png"></p>
