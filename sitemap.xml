@@ -3,6 +3,11 @@
   xmlns:xhtml="http://www.w3.org/1999/xhtml">
   
   <url>
+    <loc>https://em1l1o.github.io/posts/build_a_ci_pipeline_with_jenkins_and_docker/</loc>
+    <lastmod>2020-09-29T10:29:10+08:00</lastmod>
+  </url>
+  
+  <url>
     <loc>https://em1l1o.github.io/categories/</loc>
     <lastmod>2020-09-29T10:29:10+08:00</lastmod>
   </url>
@@ -54,11 +59,6 @@
   
   <url>
     <loc>https://em1l1o.github.io/categories/tech/</loc>
-    <lastmod>2020-09-29T10:29:10+08:00</lastmod>
-  </url>
-  
-  <url>
-    <loc>https://em1l1o.github.io/posts/build_a_ci_pipeline_with_jenkins_and_docker/</loc>
     <lastmod>2020-09-29T10:29:10+08:00</lastmod>
   </url>
   
