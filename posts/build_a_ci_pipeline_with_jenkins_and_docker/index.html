@@ -319,11 +319,18 @@ bundle exec rake -r <span style="color:#e6db74">&#39;ci/reporter/rake/rspec&#39;
     <span style="color:#f92672">}</span>
 
     stages <span style="color:#f92672">{</span>
+        stage<span style="color:#f92672">(</span><span style="color:#e6db74">&#39;Copy Scripts&#39;</span><span style="color:#f92672">)</span> <span style="color:#f92672">{</span>
+            steps <span style="color:#f92672">{</span>
+                <span style="color:#75715e">// clean directory before build
+</span><span style="color:#75715e"></span>                deleteDir<span style="color:#f92672">()</span>
+                sh <span style="color:#e6db74">&#34;cp ../Dockerfile ../docker-entrypoint.sh .&#34;</span>
+                <span style="color:#75715e">// make reports to store junit reports
+</span><span style="color:#75715e"></span>                sh <span style="color:#e6db74">&#34;mkdir reports&#34;</span>
+            <span style="color:#f92672">}</span>
+        <span style="color:#f92672">}</span>
         stage<span style="color:#f92672">(</span><span style="color:#e6db74">&#39;Checkout Branch&#39;</span><span style="color:#f92672">)</span> <span style="color:#f92672">{</span>
             steps <span style="color:#f92672">{</span>
                 dir<span style="color:#f92672">(</span><span style="color:#e6db74">&#39;project&#39;</span><span style="color:#f92672">)</span> <span style="color:#f92672">{</span>
-                    <span style="color:#75715e">// clean directory before build
-</span><span style="color:#75715e"></span>                    deleteDir<span style="color:#f92672">()</span>
                     <span style="color:#75715e">// pull branches
 </span><span style="color:#75715e"></span>                    checkout changelog: <span style="color:#66d9ef">false</span><span style="color:#f92672">,</span> poll: <span style="color:#66d9ef">false</span><span style="color:#f92672">,</span> scm: <span style="color:#f92672">[</span>$class<span style="color:#f92672">:</span> <span style="color:#e6db74">&#39;GitSCM&#39;</span><span style="color:#f92672">,</span> branches: <span style="color:#f92672">[[</span>name: <span style="color:#e6db74">&#39;master&#39;</span><span style="color:#f92672">]],</span> doGenerateSubmoduleConfigurations: <span style="color:#66d9ef">false</span><span style="color:#f92672">,</span> extensions: <span style="color:#f92672">[[</span>$class<span style="color:#f92672">:</span> <span style="color:#e6db74">&#39;LocalBranch&#39;</span><span style="color:#f92672">],</span> <span style="color:#f92672">[</span>$class<span style="color:#f92672">:</span> <span style="color:#e6db74">&#39;CheckoutOption&#39;</span><span style="color:#f92672">,</span> timeout: <span style="color:#ae81ff">60</span><span style="color:#f92672">],</span> <span style="color:#f92672">[</span>$class<span style="color:#f92672">:</span> <span style="color:#e6db74">&#39;CloneOption&#39;</span><span style="color:#f92672">,</span> noTags: <span style="color:#66d9ef">true</span><span style="color:#f92672">,</span> reference: <span style="color:#e6db74">&#39;&#39;</span><span style="color:#f92672">,</span> shallow: <span style="color:#66d9ef">false</span><span style="color:#f92672">,</span> timeout: <span style="color:#ae81ff">60</span><span style="color:#f92672">]],</span> submoduleCfg: <span style="color:#f92672">[],</span> userRemoteConfigs: <span style="color:#f92672">[[</span>credentialsId: <span style="color:#e6db74">&#39;credentialsId&#39;</span><span style="color:#f92672">,</span> name: <span style="color:#e6db74">&#39;origin&#39;</span><span style="color:#f92672">,</span> refspec: <span style="color:#e6db74">&#39;git refspec&#39;</span><span style="color:#f92672">,</span> url: <span style="color:#e6db74">&#39;git url&#39;</span><span style="color:#f92672">]]]</span>
                 <span style="color:#f92672">}</span>
